@@ -410,6 +410,7 @@ class ExtendedHttp extends BaseClient {
     final disableCache = config.cachePolicy == CachePolicy.NoCache;
     final cacheFirst = config.cachePolicy == CachePolicy.CacheFirst;
     final networkFirst = config.cachePolicy == CachePolicy.NetworkFirst;
+    final networkOnly = config.cachePolicy == CachePolicy.NetworkOnly;
 
     request.headers.addAll(config.headers);
 

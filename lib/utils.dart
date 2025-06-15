@@ -7,6 +7,9 @@ enum CachePolicy {
   /// Fetch data from cache, if not existed, fetch from network.
   CacheFirst,
 
+  /// Only fetch data from network, but store data in cache.
+  NetworkOnly,
+
   /// Only fetch data from network. Never store data in cache.
   NoCache,
 
