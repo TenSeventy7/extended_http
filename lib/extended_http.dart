@@ -113,6 +113,11 @@ class ExtendedHttp extends BaseClient {
     await _store.cleanExpiredCache();
   }
 
+  /// Clear all cache entries
+  Future<void> clearCache() async {
+    await _store.clearCache();
+  }
+
   /// Save auth data (access token, refresh token,...) for use later
   /// in `onUnauthorized` method, it can also be accessed using `getAuthData()`
   void setAuthData(Map<String, dynamic>? data) {

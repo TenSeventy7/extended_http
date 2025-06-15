@@ -166,4 +166,10 @@ class Store {
       _httpCache!.delete(key);
     }
   }
+
+  // Clean up entire cache
+  Future<void> clearCache() async {
+    if (_httpCache == null) return;
+    await _httpCache!.clear();
+  }
 }
