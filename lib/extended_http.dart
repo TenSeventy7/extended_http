@@ -35,6 +35,8 @@ class ExtendedHttp extends BaseClient {
   ///
   /// `timeout` - Request timeout, default `10 seconds`.
   ///
+  /// `cacheDuration` - Cache expiration time, default `1 hour`.
+  ///
   /// `cachePolicy` - Specify how cache should be processed, see more on `CachePolicy`, default `NetworkFirst`
   ///
   /// `headers` - Custom request headers, default `{}`.
@@ -43,6 +45,7 @@ class ExtendedHttp extends BaseClient {
   void config({
     String? baseURL,
     Duration? timeout,
+    Duration? cacheDuration,
     CachePolicy? cachePolicy,
     Map<String, String>? headers,
     bool? logURL,
@@ -56,6 +59,7 @@ class ExtendedHttp extends BaseClient {
       HttpOptionalConfig(
         baseURL: baseURL,
         timeout: timeout,
+        cacheDuration: cacheDuration,
         cachePolicy: cachePolicy,
         headers: headers,
         logURL: logURL,
@@ -102,6 +106,11 @@ class ExtendedHttp extends BaseClient {
       path: u.path,
       queryParameters: queryParameters.isEmpty ? null : queryParameters,
     );
+  }
+
+  /// Clean up expired cache entries
+  Future<void> cleanExpiredCache() async {
+    await _store.cleanExpiredCache();
   }
 
   /// Save auth data (access token, refresh token,...) for use later
@@ -428,7 +437,7 @@ class ExtendedHttp extends BaseClient {
         _log("Return cached response", debugId: debugId);
         return cachedResponse;
       }
-      _log("Cache empty. Send request.", debugId: debugId);
+      _log("Cache empty or expired. Send request.", debugId: debugId);
     }
 
     final response = await _client.send(request).timeout(config.timeout);
@@ -453,7 +462,7 @@ class ExtendedHttp extends BaseClient {
     if (request.method == 'GET' && !disableCache) {
       if (response.statusCode == 200) {
         _log("Write to cache", debugId: debugId);
-        await _cacheResponse(request.url, bodyString, response.headers);
+        await _cacheResponse(request.url, bodyString, response.headers, config);
       } else {
         if (networkFirst && response.statusCode >= 500) {
           final cachedResponse = _responseFromCache(request.url, debugId);
@@ -479,38 +488,33 @@ class ExtendedHttp extends BaseClient {
     Uri uri,
     String bodyString,
     Map<String, String> headers,
+    HttpConfig config,
   ) async {
     final cacheKey = uri.toString();
-    final headerString = jsonEncode(headers);
+    final expiresAt = DateTime.now().add(config.cacheDuration);
 
-    _store.putBody(
-      cacheKey,
-      bodyString,
+    final cacheEntry = CacheEntry(
+      body: bodyString,
+      headers: headers,
+      expiresAt: expiresAt,
     );
 
-    _store.putHeader(
-      cacheKey,
-      headerString,
-    );
+    _store.putCacheEntry(cacheKey, cacheEntry);
   }
 
   StreamedResponse? _responseFromCache(Uri uri, String? debugId) {
     final cacheKey = uri.toString();
-    final bodyString = _store.getBody(cacheKey);
-    final headerString = _store.getHeader(cacheKey);
+    final cacheEntry = _store.getCacheEntry(cacheKey);
     final config = getConfig(uri);
 
-    if (bodyString == null || bodyString.isEmpty) {
+    if (cacheEntry == null) {
       return null;
     }
-
-    final headerMap = jsonDecode(headerString ?? "{}") as Map<String, dynamic>;
-    final headers = headerMap.map((key, value) => MapEntry(key, "$value"));
 
     if (config.logRespondHeader) {
       _log(
         "Cached (200) $cacheKey headers",
-        json: headers,
+        json: cacheEntry.headers,
         debugId: debugId,
       );
     }
@@ -518,15 +522,15 @@ class ExtendedHttp extends BaseClient {
     if (config.logRespondBody) {
       _log(
         "Cached (200) $cacheKey body",
-        json: bodyString,
+        json: cacheEntry.body,
         debugId: debugId,
       );
     }
 
     return StreamedResponse(
-      Stream.value(utf8.encode(bodyString)),
+      Stream.value(utf8.encode(cacheEntry.body)),
       200,
-      headers: headers,
+      headers: cacheEntry.headers,
       reasonPhrase: "Cached Response",
     );
   }

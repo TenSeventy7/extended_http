@@ -28,6 +28,7 @@ enum HttpMethod {
 class HttpConfig {
   String baseURL;
   Duration timeout;
+  Duration cacheDuration;
   CachePolicy cachePolicy;
   Map<String, String> headers;
 
@@ -42,6 +43,7 @@ class HttpConfig {
     this.baseURL = '',
     this.headers = const {},
     this.timeout = const Duration(seconds: 10),
+    this.cacheDuration = const Duration(hours: 1),
     this.cachePolicy = CachePolicy.NetworkFirst,
     this.logURL = true,
     this.logRequestHeader = false,
@@ -57,6 +59,7 @@ class HttpConfig {
     headers.addAll(other.headers ?? {});
     baseURL = other.baseURL ?? baseURL;
     timeout = other.timeout ?? timeout;
+    timeout = other.timeout ?? timeout;
     cachePolicy = other.cachePolicy ?? cachePolicy;
     logURL = other.logURL ?? logURL;
     logRequestHeader = other.logRequestHeader ?? logRequestHeader;
@@ -71,6 +74,7 @@ class HttpConfig {
       headers: headers,
       baseURL: baseURL,
       timeout: timeout,
+      cacheDuration: cacheDuration,
       cachePolicy: cachePolicy,
       logURL: logURL,
       logRequestHeader: logRequestHeader,
@@ -85,6 +89,7 @@ class HttpConfig {
 class HttpOptionalConfig {
   String? baseURL;
   Duration? timeout;
+  Duration? cacheDuration;
   CachePolicy? cachePolicy;
   Map<String, String>? headers;
 
@@ -99,6 +104,7 @@ class HttpOptionalConfig {
     this.baseURL,
     this.headers,
     this.timeout,
+    this.cacheDuration,
     this.cachePolicy,
     this.logURL,
     this.logRequestHeader,
