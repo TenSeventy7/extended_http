@@ -507,6 +507,12 @@ class ExtendedHttp extends BaseClient {
     _store.putCacheEntry(cacheKey, cacheEntry);
   }
 
+  bool isCached(Uri uri) {
+    final cacheKey = uri.toString();
+    final cacheEntry = _store.getCacheEntry(cacheKey);
+    return cacheEntry != null && cacheEntry.expiresAt.isAfter(DateTime.now());
+  }
+
   StreamedResponse? _responseFromCache(Uri uri, String? debugId) {
     final cacheKey = uri.toString();
     final cacheEntry = _store.getCacheEntry(cacheKey);
